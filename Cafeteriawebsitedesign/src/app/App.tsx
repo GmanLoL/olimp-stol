@@ -1704,119 +1704,144 @@ if (data.access) {
                     className="text-red-600 text-sm mb-4 tracking-widest"
                     style={{ fontFamily: 'monospace' }}
                   >
-                    [ДОБАВИТЬ_ОТЗЫВ]
+                    {isLoggedIn ? `[ДОБАВИТЬ_ОТЗЫВ_КАК_${userName.toUpperCase()}]` : '[ВОЙДИТЕ_ДЛЯ_ОТЗЫВА]'}
                   </h5>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const formData = new FormData(e.currentTarget);
-                      const author = formData.get('author') as string;
-                      const rating = Number(formData.get('rating'));
-                      const comment = formData.get('comment') as string;
+                  
+                  {isLoggedIn ? (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        const rating = Number(formData.get('rating'));
+                        const comment = formData.get('comment') as string;
 
-                      // TODO: Add review to database (see DATABASE_SETUP.md)
-                      console.log('Review submitted:', { author, rating, comment, dishId: selectedItem.id });
+                        // Создаем новый отзыв от имени текущего пользователя
+                        const newReview: Review = {
+                          id: Date.now().toString(),
+                          author: userName,
+                          rating: rating,
+                          comment: comment,
+                          date: new Date().toLocaleDateString('ru-RU')
+                        };
 
-                      // Reset form
-                      e.currentTarget.reset();
+                        // Добавляем отзыв в selectedItem
+                        if (selectedItem) {
+                          const updatedReviews = [...selectedItem.reviews, newReview];
+                          const newAverage = updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length;
+                          
+                          setSelectedItem({
+                            ...selectedItem,
+                            reviews: updatedReviews,
+                            averageRating: parseFloat(newAverage.toFixed(1))
+                          });
+                        }
 
-                      // Show success message (you can replace with toast notification)
-                      alert('Отзыв отправлен!');
-                    }}
-                    className="space-y-4"
-                  >
-                    {/* Author Name Input */}
-                    <div>
-                      <label
-                        className="block text-green-500 text-xs mb-2 tracking-widest"
-                        style={{ fontFamily: 'monospace' }}
-                      >
-                        [ИМЯ]
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          name="author"
-                          required
-                          placeholder="ВВЕДИТЕ_ИМЯ"
-                          className="w-full p-3 bg-black border-2 border-green-500 text-white placeholder-green-900 focus:border-red-600 focus:outline-none transition-colors"
-                          style={{
-                            fontFamily: 'monospace',
-                            clipPath: 'polygon(0 0, 98% 0, 100% 15%, 100% 100%, 0 100%)',
-                          }}
-                        />
-                        <div className="absolute top-0 right-0 w-2 h-2 bg-red-600" />
-                      </div>
-                    </div>
-
-                    {/* Rating Selection */}
-                    <div>
-                      <label
-                        className="block text-green-500 text-xs mb-2 tracking-widest"
-                        style={{ fontFamily: 'monospace' }}
-                      >
-                        [ОЦЕНКА]
-                      </label>
-                      <div className="relative">
-                        <select
-                          name="rating"
-                          required
-                          className="w-full p-3 bg-black border-2 border-green-500 text-white focus:border-red-600 focus:outline-none transition-colors"
-                          style={{
-                            fontFamily: 'monospace',
-                            clipPath: 'polygon(0 0, 98% 0, 100% 15%, 100% 100%, 0 100%)',
-                          }}
-                        >
-                          <option value="">ВЫБЕРИТЕ_ОЦЕНКУ</option>
-                          <option value="5">★★★★★ (5)</option>
-                          <option value="4">★★★★☆ (4)</option>
-                          <option value="3">★★★☆☆ (3)</option>
-                          <option value="2">★★☆☆☆ (2)</option>
-                          <option value="1">★☆☆☆☆ (1)</option>
-                        </select>
-                        <div className="absolute top-0 right-0 w-2 h-2 bg-red-600" />
-                      </div>
-                    </div>
-
-                    {/* Comment Textarea */}
-                    <div>
-                      <label
-                        className="block text-green-500 text-xs mb-2 tracking-widest"
-                        style={{ fontFamily: 'monospace' }}
-                      >
-                        [КОММЕНТАРИЙ]
-                      </label>
-                      <div className="relative">
-                        <textarea
-                          name="comment"
-                          required
-                          placeholder="ВАШ_ОТЗЫВ"
-                          rows={4}
-                          className="w-full p-3 bg-black border-2 border-green-500 text-white placeholder-green-900 focus:border-red-600 focus:outline-none transition-colors resize-none"
-                          style={{
-                            fontFamily: 'monospace',
-                            clipPath: 'polygon(0 0, 98% 0, 100% 8%, 100% 100%, 0 100%)',
-                          }}
-                        />
-                        <div className="absolute top-0 right-0 w-2 h-2 bg-red-600" />
-                      </div>
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      className="w-full p-4 bg-red-600 text-black border-2 border-red-600 hover:bg-green-500 hover:border-green-500 transition-all relative overflow-hidden group"
-                      style={{
-                        fontFamily: 'monospace',
-                        clipPath: 'polygon(5% 0, 100% 0, 95% 100%, 0 100%)',
+                        // Сброс формы
+                        e.currentTarget.reset();
                       }}
+                      className="space-y-4"
                     >
-                      <span className="block text-base tracking-widest">
-                        [ОТПРАВИТЬ_ОТЗЫВ]
-                      </span>
-                      <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
-                    </button>
-                  </form>
+                      {/* Информация о том, от чьего имени будет отзыв */}
+                      <div className="border-2 border-green-500 p-3 bg-black/50">
+                        <div className="text-xs text-green-500 mb-1" style={{ fontFamily: 'monospace' }}>
+                          [ОТЗЫВ_ОТ_ИМЕНИ]:
+                        </div>
+                        <div className="text-white text-lg" style={{ fontFamily: 'monospace' }}>
+                          {userName}
+                        </div>
+                        {userProfile?.name && (
+                          <div className="text-gray-400 text-sm mt-1">
+                            ({userProfile.name})
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Rating Selection */}
+                      <div>
+                        <label
+                          className="block text-green-500 text-xs mb-2 tracking-widest"
+                          style={{ fontFamily: 'monospace' }}
+                        >
+                          [ОЦЕНКА]
+                        </label>
+                        <div className="relative">
+                          <select
+                            name="rating"
+                            required
+                            className="w-full p-3 bg-black border-2 border-green-500 text-white focus:border-red-600 focus:outline-none transition-colors"
+                            style={{
+                              fontFamily: 'monospace',
+                              clipPath: 'polygon(0 0, 98% 0, 100% 15%, 100% 100%, 0 100%)',
+                            }}
+                          >
+                            <option value="">ВЫБЕРИТЕ_ОЦЕНКУ</option>
+                            <option value="5">★★★★★ (5)</option>
+                            <option value="4">★★★★☆ (4)</option>
+                            <option value="3">★★★☆☆ (3)</option>
+                            <option value="2">★★☆☆☆ (2)</option>
+                            <option value="1">★☆☆☆☆ (1)</option>
+                          </select>
+                          <div className="absolute top-0 right-0 w-2 h-2 bg-red-600" />
+                        </div>
+                      </div>
+
+                      {/* Comment Textarea */}
+                      <div>
+                        <label
+                          className="block text-green-500 text-xs mb-2 tracking-widest"
+                          style={{ fontFamily: 'monospace' }}
+                        >
+                          [КОММЕНТАРИЙ]
+                        </label>
+                        <div className="relative">
+                          <textarea
+                            name="comment"
+                            required
+                            placeholder={`ВВЕДИТЕ_ВАШ_ОТЗЫВ, ${userName}`}
+                            rows={4}
+                            className="w-full p-3 bg-black border-2 border-green-500 text-white placeholder-green-900 focus:border-red-600 focus:outline-none transition-colors resize-none"
+                            style={{
+                              fontFamily: 'monospace',
+                              clipPath: 'polygon(0 0, 98% 0, 100% 8%, 100% 100%, 0 100%)',
+                            }}
+                          />
+                          <div className="absolute top-0 right-0 w-2 h-2 bg-red-600" />
+                        </div>
+                      </div>
+
+                      {/* Submit Button */}
+                      <button
+                        type="submit"
+                        className="w-full p-4 bg-red-600 text-black border-2 border-red-600 hover:bg-green-500 hover:border-green-500 transition-all relative overflow-hidden group"
+                        style={{
+                          fontFamily: 'monospace',
+                          clipPath: 'polygon(5% 0, 100% 0, 95% 100%, 0 100%)',
+                        }}
+                      >
+                        <span className="block text-base tracking-widest">
+                          [ОТПРАВИТЬ_ОТЗЫВ]
+                        </span>
+                        <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
+                      </button>
+                    </form>
+                  ) : (
+                    // Сообщение для неавторизованных пользователей
+                    <div className="border-2 border-red-600 p-6 text-center bg-black/50">
+                      <p className="text-white mb-4" style={{ fontFamily: 'monospace' }}>
+                        ДЛЯ_ОСТАВЛЕНИЯ_ОТЗЫВА_ВОЙДИТЕ_В_СИСТЕМУ
+                      </p>
+                      <button
+                        onClick={() => {
+                          setSelectedItem(null);
+                          setShowLoginPopup(true);
+                        }}
+                        className="px-6 py-3 bg-green-500 text-black border-2 border-green-500 hover:bg-red-600 hover:border-red-600 transition-all"
+                        style={{ fontFamily: 'monospace' }}
+                      >
+                        [ВОЙТИ]
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
